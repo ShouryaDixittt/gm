@@ -1,0 +1,39 @@
+# Roadmap
+- [x] Polishing pass: truthful demo counters, source register retry, global source-status isolation, domain metadata, manifest/structured data, Methodology mobile overflow and safe demo billing verified
+- [x] Saved waitlist, unlimited Business daily allowance, atomic public-form/source request limits, private raw diagnostics and sanitized public summaries; tests and signed-in billing read-back passed
+- [ ] Rich demo corpus — unmet: 12 events / 19 country profiles / 10 industries / 8 route nodes; requested 25 / 40 / 15 / 10 plus 30 distinct trade links need explicit hypothetical content expansion
+- [ ] Remaining polishing capabilities — onboarding, account deletion, guest migration, watchlist-count entitlements, streaming/remaining brief display, report request fields, full map/graph controls and complete action/state accessibility audit are not implemented
+- [ ] Deployment and performance verification — host redirects/security headers, Lighthouse/CLS, image optimization, OAuth/email settings and monitoring integrations remain unverified or unconfigured
+- [x] Rebuild homepage pricing and subscription page with shared prominent cards and separate Risk Brief; desktop/mobile dialogs, free exploration and demo checkout links verified; 31 tests passed
+- [x] Premium experience brief: sharpen business positioning and interactive event preview; put the Impact Graph first and expose relationship context
+- [x] Refine pricing, mobile comparison, billing FAQs and shared public footer with truthful company/contact/data/terms pages
+- [x] Verify public navigation, graph selections, responsive pages and signed-in demo billing; preserve existing safeguards
+- [ ] Final legal policy and company details — blocked: verified operator identity, contact, retention and refund terms must be supplied; factual notices are available
+- [x] Final dark transformation: replace lime tokens, rebuild homepage hero/ecosystem and map-first application stage hierarchy; preserve data and payment logic
+- [x] Verify 31 dark destinations at three sizes, map/graph/stage navigation, mobile menu, signed-in demo billing and 31 existing tests
+- [x] Latest reconstruction brief: make /app a reference-led exploration experience, preserving analytical controls; verified at 951×609 and desktop/phone sizes
+- [x] Reconstruct overview, graph and page families with distinct reference-derived layouts; compact expandable navigation inventory retained
+- [x] Reorder homepage into seven narrative stages and verify reconstructed routes with preserved workflows
+- [x] Recreate live Orizon reference: extracted light/lime tokens, centered homepage, five-stage impact story, ecosystem and conversion sections
+- [x] Carry shared reference visual system through app, auth, pricing, checkout, loading and unavailable states
+- [x] Compare reference and updated preview; test public and signed-in demo order creation/cancellation at desktop/tablet/mobile sizes
+- [x] Orizon-inspired foundation: immersive homepage, persistent navigation, map-first overview, connected impact story, pricing and shared page layouts
+- [x] Verify redesigned navigation, map selection, pricing and desktop/mobile rendering
+- [x] Event/profile report indices, regional country rosters, sector catalogue, source register, scenario builder, analyst notebook and centered auth; billing/order layout and signed-in demo read-back verified
+- [x] Non-blue design system and compact map-first homepage
+- [x] Consistent app/map/graph styling and dummy QR checkout
+- [x] Automated tests and public navigation at desktop/tablet/phone sizes
+- [x] Authenticated demo billing: order creation, cancellation and saved record read-back; Free Explorer allowance stays unchanged
+- [x] Sample intelligence report (printable)
+- [x] Business exposure assessment (saved per user)
+- [x] Pricing page + request report/pilot form
+- [ ] Live manual UPI verification — blocked: real QR and payment setup required; dummy QR remains non-payable
+- [ ] Admin payment transaction/renewal verification — blocked: authenticator verification required; MFA gate checked, post-code approval not exercised
+
+## Organic growth brief
+- [x] Sitemap (45 pages incl. countries & industries), robots Sitemap line, canonical + og:url, per-country/industry titles
+- [x] Copy link button on country, industry, event pages
+- [x] Demonstration event pages and private pages kept out of search (noindex)
+- [ ] Newsletter / reminder emails — blocked: needs email sending set up + consent design
+- [ ] Editorial articles workflow — needs user's decision on who writes/reviews
+- [ ] Growth dashboard — use built-in project analytics; checkout/conversion events not yet tracked

@@ -1,0 +1,247 @@
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "@/lib/router-shim";
+import { useQuery } from "@/lib/backend/shim";
+import { api } from "@/lib/backend/api";
+import { PageFrame } from "@/components/viz/exec/design";
+import { GraphExplorer } from "@/components/viz/Flow";
+import { Bar, NoData, Panel, Skeleton } from "@/components/viz/core";
+import { getNode } from "@/lib/intel/nodes";
+import { riskColorForScore } from "@/lib/intel/visual";
+import { Button } from "@/components/ui/button";
+import { FiveStageStory } from "@/components/landing/ReferenceStory";
+
+/**
+ * Graph explorer.
+ *
+ * Layout is deterministic (layered by node kind) rather than force-directed,
+ * so the same selection always produces the same readable picture.
+ */
+export default function GraphExplorerPage() {
+  const feed = useQuery(api.intel.detectionFeed, {});
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const eventId = params.get("event") ?? feed?.rows[0]?.id;
+  const graph = useQuery(api.intel.eventGraph, eventId ? { eventId } : "skip");
+
+  const nodeCount = graph?.nodes.length ?? 0;
+  const [isolate, setIsolate] = useState(false);
+
+  // Relationship filter: with a node selected, the graph can collapse to its
+  // immediate neighbourhood. Nothing is recomputed — the same edges are simply
+  // hidden, so the picture stays a subset of the real graph.
+  const view = useMemo(() => {
+    if (!graph) return { nodes: [], edges: [] };
+    if (!isolate || !selected) return { nodes: graph.nodes, edges: graph.edges };
+    const keep = new Set<string>([selected]);
+    const edges = graph.edges.filter((e) => {
+      if (e.from === selected || e.to === selected) {
+        keep.add(e.from);
+        keep.add(e.to);
+        return true;
+      }
+      return false;
+    });
+    return {
+      nodes: graph.nodes.filter((n) => keep.has(n.id)),
+      edges,
+    };
+  }, [graph, isolate, selected]);
+  const kindCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const n of graph?.nodes ?? []) m.set(n.kind, (m.get(n.kind) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [graph]);
+
+  if (!feed) {
+    return (
+      <main>
+        <div className="p-3">
+          <Skeleton className="h-[520px] w-full" />
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <PageFrame
+      layout="workspace"
+      eyebrow="Knowledge graph"
+      title="Impact Graph"
+      lede="Select a signal. Explore its modelled pathways and inspect the supported exposure relationships."
+      actions={
+        <>
+          <label className="flex items-center gap-2">
+            <span className="exec-label">Event</span>
+            <select
+              value={eventId ?? ""}
+              onChange={(e) => setParams(e.target.value ? { event: e.target.value } : {})}
+              className="max-w-[16rem] border border-[var(--exec-hairline-strong)] bg-transparent px-2 py-1.5 text-[12px] text-[var(--exec-ink)]"
+            >
+              {(feed?.rows ?? []).map((r) => (
+                <option key={r.id} value={r.id} className="bg-[var(--exec-base)]">
+                  {r.reference} — {r.title.slice(0, 40)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      }
+    >
+      <div className="gm-graph-workspace grid grid-cols-1 gap-6 lg:col-span-12 xl:grid-cols-12">
+        <section className="min-w-0 xl:col-span-9">
+          <Panel
+            title="Exposure network"
+            meta={`${view.nodes.length} of ${nodeCount} nodes · ${view.edges.length} edges`}
+            actions={
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setIsolate((v) => !v)}
+                disabled={!selected}
+                title={
+                  selected
+                    ? "Show only the selected node's immediate neighbourhood"
+                    : "Select a node first"
+                }
+                className="label flex items-center gap-1.5 border border-rule px-2 py-1 transition-colors enabled:hover:border-foreground disabled:opacity-40"
+              >
+                {isolate ? "Show all" : "Isolate selection"}
+              </Button>
+            }
+          >
+            {graph === null ? (
+              <NoData reason="No exposure network exists for this event. Choose another event." />
+            ) : graph ? (
+              <GraphExplorer
+                nodes={view.nodes}
+                edges={view.edges}
+                height={640}
+                selected={selected}
+                onSelect={(id) => {
+                  // Graph ids are node ids, except the synthetic event and
+                  // channel hubs, which are not places and open their own page.
+                  if (id.startsWith("ch:")) {
+                    navigate("/app/risk");
+                    return;
+                  }
+                  if (id === eventId) {
+                    navigate(`/app/event/${id}`);
+                    return;
+                  }
+                  setSelected((current) => (current === id ? null : id));
+                }}
+              />
+            ) : (
+              <Skeleton className="h-[640px] w-full" />
+            )}
+            <div className="flex flex-wrap items-center gap-4 border-t border-rule px-3 py-2">
+              {kindCounts.map(([kind, count]) => (
+                <span key={kind} className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block size-2 border border-current"
+                    style={{ borderRadius: "9999px" }}
+                  />
+                  <span className="label text-muted-foreground">
+                    {kind} · {count}
+                  </span>
+                </span>
+              ))}
+              <span className="label text-muted-foreground">
+                Node radius = impact · edge width = impact × magnitude
+              </span>
+            </div>
+          </Panel>
+        </section>
+
+        <section className="min-w-0 space-y-3 xl:col-span-3">
+          <Panel title="Relationship context" meta="Modelled · not observed causation">
+            {selected && graph?.nodes.some((node) => node.id === selected) ? (
+              <div className="space-y-3 p-3">
+                <div>
+                  <p className="text-[14px] font-semibold">{selectedLabel(selected)}</p>
+                  <p className="num mt-0.5 text-[12px] text-muted-foreground">{selected}</p>
+                </div>
+                <Bar
+                  value={nodeWeight(selected, graph?.nodes ?? [])}
+                  tone={riskColorForScore(nodeWeight(selected, graph?.nodes ?? []) * 100)}
+                  height={5}
+                />
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Impact is a model weight, not the probability of disruption or a financial-loss
+                  estimate.
+                </p>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to={`/app/country/${selected}`}>Inspect country evidence</Link>
+                </Button>
+                <ul className="divide-y divide-border">
+                  {graph.edges
+                    .filter((edge) => edge.from === selected || edge.to === selected)
+                    .map((edge, index) => {
+                      const other = graph.nodes.find(
+                        (node) => node.id === (edge.from === selected ? edge.to : edge.from),
+                      );
+                      return (
+                        <li key={`${edge.from}:${edge.to}:${index}`} className="py-3 text-xs">
+                          <p className="font-medium">
+                            {edge.from === selected ? selectedLabel(selected) : other?.label} →{" "}
+                            {edge.to === selected ? selectedLabel(selected) : other?.label}
+                          </p>
+                          <p className="mt-1 text-muted-foreground">
+                            {edge.label} · weight {edge.weight.toFixed(2)}
+                          </p>
+                        </li>
+                      );
+                    })}
+                </ul>
+                <Button asChild variant="link" className="px-0">
+                  <Link to={`/app/event/${eventId}`}>Inspect event assumptions & confidence</Link>
+                </Button>
+              </div>
+            ) : (
+              <NoData reason="Select a node on the graph to inspect it." />
+            )}
+          </Panel>
+
+          <Panel title="Edge legend">
+            <ul className="divide-y divide-rule text-[12px]">
+              {[
+                ["propagates via", "Event → Channel, weighted by pathway magnitude"],
+                ["exposes", "Channel → Node, weighted by impact × magnitude"],
+              ].map(([label, note]) => (
+                <li key={label} className="px-3 py-2">
+                  <p className="font-medium">{label}</p>
+                  <p className="mt-0.5 text-muted-foreground">{note}</p>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+
+          <Panel title="Not available">
+            <p className="px-3 py-3 text-[12px] leading-relaxed text-muted-foreground">
+              Company, commodity and policy nodes are absent because this build has no company
+              graph, commodity registry or policy dataset. Adding them would mean inventing
+              relationships, so they are not drawn.
+            </p>
+          </Panel>
+        </section>
+      </div>
+      <details className="border-t border-border py-6 lg:col-span-12">
+        <summary className="cursor-pointer text-lg font-medium">
+          Follow the business impact workflow
+        </summary>
+        <FiveStageStory embedded />
+      </details>
+    </PageFrame>
+  );
+}
+
+function selectedLabel(id: string): string {
+  return getNode(id).label;
+}
+
+function nodeWeight(id: string, nodes: { id: string; weight: number }[]): number {
+  return nodes.find((n) => n.id === id)?.weight ?? 0;
+}
